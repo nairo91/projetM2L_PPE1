@@ -1,0 +1,93 @@
+USE gestion_football;
+
+CREATE TABLE Joueurs (
+    idJoueur INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(50),
+    prenom VARCHAR(50),
+    age INT,
+    pseudo VARCHAR(50) UNIQUE,
+    niveau ENUM('Débutant', 'Joueur occasionnel', 'Expert'),
+    mot_de_passe VARCHAR(255)
+);
+
+CREATE TABLE Matchs (
+    idMatch INT AUTO_INCREMENT PRIMARY KEY,
+    type_match VARCHAR(50),
+    nombre_joueurs_presents INT,
+    nombre_joueurs_recherches INT,
+    ville VARCHAR(50)
+);
+
+CREATE TABLE Equipe (
+    idEquipe INT AUTO_INCREMENT PRIMARY KEY,
+    nomEquipe VARCHAR(50)
+);
+
+CREATE TABLE Tournois (
+    idTournois INT AUTO_INCREMENT PRIMARY KEY,
+    nomTournois VARCHAR(50),
+    villeTournois VARCHAR(50)
+);
+
+CREATE TABLE appartenir (
+    idJoueur INT,
+    idEquipe INT,
+    PRIMARY KEY(idJoueur, idEquipe),
+    FOREIGN KEY(idJoueur) REFERENCES Joueurs(idJoueur),
+    FOREIGN KEY(idEquipe) REFERENCES Equipe(idEquipe)
+);
+
+CREATE TABLE participer (
+    idJoueur INT,
+    idMatch INT,
+    PRIMARY KEY(idJoueur, idMatch),
+    FOREIGN KEY(idJoueur) REFERENCES Joueurs(idJoueur),
+    FOREIGN KEY(idMatch) REFERENCES Matchs(idMatch)
+);
+
+CREATE TABLE impliquer (
+    idEquipe INT,
+    idTournois INT,
+    PRIMARY KEY(idEquipe, idTournois),
+    FOREIGN KEY(idEquipe) REFERENCES Equipe(idEquipe),
+    FOREIGN KEY(idTournois) REFERENCES Tournois(idTournois)
+);
+
+ALTER TABLE participer 
+ADD COLUMN nombre_buts INT DEFAULT 0,
+ADD COLUMN nombre_passes_decisives INT DEFAULT 0,
+ADD COLUMN nombre_arrets INT DEFAULT 0;
+
+ALTER TABLE Matchs ADD COLUMN idEquipe INT;
+
+ALTER TABLE matchs ADD COLUMN idEquipe INT;
+ALTER TABLE matchs ADD CONSTRAINT fk_equipe_matchs
+FOREIGN KEY (idEquipe) REFERENCES Equipe(idEquipe);
+
+ALTER TABLE Matchs ADD winner VARCHAR(255);
+
+ALTER TABLE matchs ADD phase VARCHAR(50);
+
+ALTER TABLE Matchs
+ADD COLUMN idEquipe1 INT,
+ADD COLUMN idEquipe2 INT;
+
+
+ALTER TABLE Matchs ADD COLUMN winner INT;  -- Utilisez le type de données approprié (ex. INT si winner est l'ID d'une équipe)
+
+
+
+
+
+ALTER TABLE Tournois
+ADD PRIMARY KEY (idTournois);
+
+alter table Matchs
+ADD idTournois INT;
+
+ALTER TABLE Matchs 
+ADD CONSTRAINT fk_tournoi 
+FOREIGN KEY (idTournois) REFERENCES Tournois(idTournois);
+
+
+

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil - Gestion de Matchs de Football</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('background-football.jpg');
+            background-size: cover;
+            color: white;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+
+        nav {
+            background-color: rgba(255, 165, 0, 0.9);
+            overflow: hidden;
+        }
+
+        nav a {
+            float: left;
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 20px;
+            text-decoration: none;
+            font-size: 1.2em;
+        }
+
+        nav a:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .hero {
+            padding: 60px;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .hero h2 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.5em;
+        }
+
+        .content {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .content div {
+            width: 30%;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .content div h3 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .content div p {
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Gestion de Matchs de Football</h1>
+    </header>
+
+    <nav>
+        <a href="connexion_joueur.php">Connexion</a>
+        <a href="inscription_joueur.php">Inscription</a>
+        <a href="creer_match.php">Créer un Match</a>
+        <a href="creer_equipe.php">Gérer les Équipes</a>
+        <a href="creer_tournoi.php">Créer un Tournoi</a>
+        <a href="statistiques_joueur.php">Statistiques</a>
+    </nav>
+
+    <div class="hero">
+        <h2>Bienvenue sur la plateforme de gestion de matchs de football</h2>
+        <p>Organisez vos matchs, gérez vos équipes, participez à des tournois et bien plus encore.</p>
+    </div>
+
+    <div class="content">
+        <div>
+            <h3>Créez et Rejoignez des Matchs</h3>
+            <p>Participez à des matchs de football autour de vous, que ce soit pour le plaisir ou pour la compétition.</p>
+        </div>
+        <div>
+            <h3>Gérez vos Équipes</h3>
+            <p>Formez une équipe avec vos amis, recrutez de nouveaux membres et affrontez d'autres équipes.</p>
+        </div>
+        <div>
+            <h3>Participez à des Tournois</h3>
+            <p>Inscrivez votre équipe à des tournois locaux et montrez vos talents sur le terrain.</p>
+        </div>
+    </div>
+</body>
+</html>

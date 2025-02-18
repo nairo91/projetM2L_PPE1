@@ -1,0 +1,35 @@
+<?php
+session_start();
+
+class InscriptionController {
+    private $model;
+
+    public function __construct($model) {
+        $this->model = $model;
+    }
+
+    public function register() {
+        $error_message = "";
+
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $nom = $_POST['nom'];
+            $prenom = $_POST['prenom'];
+            $age = intval($_POST['age']);
+            $pseudo = $_POST['pseudo'];
+            $mot_de_passe = $_POST['mot_de_passe'];
+            $niveau = $_POST['niveau'];
+
+            $result = $this->model->registerUser($nom, $prenom, $age, $pseudo, $mot_de_passe, $niveau);
+
+            if ($result === true) {
+                header("Location: connexion_joueur.php");
+                exit();
+            } else {
+                $error_message = $result;
+            }
+        }
+
+        include 'View/registerView.php';
+    }
+}
+?>
