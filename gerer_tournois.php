@@ -1,3 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Tournois</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 50px;
+            max-width: 1200px;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            background: white;
+        }
+        .table th, .table td {
+            text-align: center;
+        }
+
+        /* Conteneur stylisé pour la sélection du tournoi */
+.select-container {
+    text-align: center;
+    padding: 20px;
+    background: #0077cc;
+    color: white;
+    border-radius: 10px;
+    max-width: 400px;
+    margin: auto;
+}
+
+/* Style des menus déroulants */
+select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #9ec4f5;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* Effet sur le menu déroulant au focus */
+select:focus {
+    outline: none;
+    box-shadow: 0 0 5px rgba(0, 119, 204, 0.8);
+}
+
+/* Appliquer un fond blanc uniquement au menu déroulant du choix du tournoi */
+#tournoiSelect {
+    background-color: white !important;
+    color: black;
+}
+
+/* Garder les autres menus déroulants (ex: sélection du gagnant) en bleu */
+select:not(#tournoiSelect) {
+    background-color: #9ec4f5 !important;
+    color: black;
+}
+
+ /* Amélioration des boutons "Mettre à jour" */
+ .update-btn {
+            display: inline-block;
+            background-color: #0077cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            text-align: center;
+            text-decoration: none;
+            transition: background-color 0.3s ease-in-out, transform 0.1s ease-in-out;
+            margin-top: 5px;
+        }
+
+        .update-btn:hover {
+            background-color: #005fa3;
+            transform: scale(1.05);
+        }
+
+        .update-btn:active {
+            background-color: #004080;
+            transform: scale(0.95);
+        }
+
+        /* Conteneur stylisé pour les scores */
+        .score-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px; /* Espacement entre les éléments */
+    background: #e3f2fd; /* Couleur bleue claire pour le fond */
+    padding: 10px;
+    border-radius: 8px;
+    max-width: 250px;
+    margin-top: 10px; /* Espacement au-dessus */
+    margin-bottom: 20px; /* Espacement sous le score */
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+}
+
+
+/* Style des champs de score */
+.score-input {
+    width: 50px;
+    height: 40px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    border: 2px solid #0077cc; /* Bordure bleue */
+    border-radius: 5px;
+    background-color: white;
+}
+
+
+    </style>
+</head>
+<body>
+    <div class="container">
 <?php 
 include('config.php');
 session_start();
@@ -81,18 +209,19 @@ function afficherPhases($conn, $idTournois) {
             echo "<form method='POST'>
                     <input type='hidden' name='idMatch' value='{$match['idMatch']}'>
                     <label>Score: </label>
-                    <input type='number' name='scoreEquipe1' value='{$match['scoreEquipe1']}' min='0' style='width: 50px;'> - 
-                    <input type='number' name='scoreEquipe2' value='{$match['scoreEquipe2']}' min='0' style='width: 50px;'><br>
+                      <input type='number' name='scoreEquipe1' value='{$match['scoreEquipe1']}' min='0' class='score-input'> -
+                        <input type='number' name='scoreEquipe2' value='{$match['scoreEquipe2']}' min='0' class='score-input'>
                     <label>Gagnant: </label>
                     <select name='gagnant'>
                         <option value='{$match['idEquipe1']}'>{$match['equipe1']}</option>
                         <option value='{$match['idEquipe2']}'>{$match['equipe2']}</option>
                     </select>
-                    <input type='submit' value='Mettre à jour'>
+                    <input type='submit' value='Mettre à jour' class='update-btn'>
                   </form>";
             echo "<strong>Gagnant : {$match['winnerName']}</strong>";
             echo "</div>";
         }
+        
         echo "</div>";
     }
     afficherStatistiques($conn, $idTournois);
@@ -192,7 +321,7 @@ a {
 <div class="select-container">
 <form method="GET" action="">
     <label for="tournoi">Sélectionnez un tournoi :</label>
-    <select name="tournoi" id="tournoi" onchange="this.form.submit()">
+    <select name="tournoi" id="tournoiSelect" onchange="this.form.submit()">
         <option value="">-- Choisissez un tournoi --</option>
         <?php
         while ($tournoi = $resultTournois->fetch_assoc()) {
@@ -213,5 +342,10 @@ if (isset($_GET['tournoi'])) {
 
 
 <a href="accueil.php">Retour à l'accueil</a>
+</body>
+</html>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

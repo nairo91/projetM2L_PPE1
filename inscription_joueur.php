@@ -70,7 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         input[type="submit"] {
-            background-color: #4CAF50;
+            background-color: #004080;
             color: white;
             padding: 10px 20px;
             border: none;
@@ -80,12 +80,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             transition: background-color 0.3s ease;
         }
         input[type="submit"]:hover {
-            background-color: #45a049;
+            background-color: #004080;
         }
         .error {
             color: #f44336;
             margin-top: 10px;
         }
+
+        /* Bouton de retour à l'accueil */
+.back-btn {
+    display: inline-block;
+    margin-top: 20px;
+    background-color: #0077cc;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 5px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s ease-in-out, transform 0.1s ease-in-out;
+}
+
+.back-btn:hover {
+    background-color: #005fa3;
+    transform: scale(1.05);
+}
+
+.back-btn:active {
+    background-color: #004080;
+    transform: scale(0.95);
+}
+
     </style>
 </head>
 <body>
@@ -107,6 +133,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <option value="Expert">Expert</option>
         </select>
         <input type="submit" value="S'inscrire">
+        <a href="index.html" class="back-btn">Retour à l'accueil</a>
+
     </form>
 </div>
 </body>
