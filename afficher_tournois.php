@@ -146,7 +146,8 @@ if (isset($_GET['tournoi'])) {
     $idTournois = intval($_GET['tournoi']);
 
     $queryMatchs = "
-        SELECT m.idMatch, m.phase, e1.nomEquipe AS equipe1, e2.nomEquipe AS equipe2, g.nomEquipe AS winner 
+        SELECT m.idMatch, m.phase, e1.nomEquipe AS equipe1, e2.nomEquipe AS equipe2, 
+               m.scoreEquipe1, m.scoreEquipe2, g.nomEquipe AS winner 
         FROM Matchs m
         LEFT JOIN Equipe e1 ON m.idEquipe1 = e1.idEquipe 
         LEFT JOIN Equipe e2 ON m.idEquipe2 = e2.idEquipe
@@ -166,6 +167,8 @@ if (isset($_GET['tournoi'])) {
             $phase = htmlspecialchars($match['phase']);
             $equipe1 = $match['equipe1'] ? htmlspecialchars($match['equipe1']) : 'Équipe non définie';
             $equipe2 = $match['equipe2'] ? htmlspecialchars($match['equipe2']) : 'Équipe non définie';
+            $score1 = isset($match['scoreEquipe1']) ? $match['scoreEquipe1'] : '-';
+            $score2 = isset($match['scoreEquipe2']) ? $match['scoreEquipe2'] : '-';
             $winner = $match['winner'] ? htmlspecialchars($match['winner']) : 'Pas encore défini';
 
             if ($phase !== $currentPhase) {
@@ -179,6 +182,7 @@ if (isset($_GET['tournoi'])) {
             if ($equipe1 !== 'Équipe non définie' && $equipe2 !== 'Équipe non définie') {
                 echo "<div class='match'>";
                 echo "$equipe1 VS $equipe2<br>";
+                echo "Score: $score1 - $score2<br>";
                 echo "<strong>Gagnant : </strong>$winner";
                 echo "</div>";
             }
