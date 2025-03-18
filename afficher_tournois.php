@@ -1,5 +1,8 @@
+
+
 <?php
 include('config.php');
+require('fpdf/fpdf.php');
 
 function afficherStatistiques($conn, $idTournois) {
     echo "<h3>Statistiques des Équipes</h3><table border='1' style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
@@ -197,6 +200,8 @@ if (isset($_GET['tournoi'])) {
     echo "<p>Sélectionnez un tournoi pour afficher les matchs.</p>";
 }
 ?>
+
+<a href="export_pdf.php?tournoi=<?php echo $idTournois; ?>">Exporter en PDF</a>
 
 <a href="accueil.php">Retour à l'accueil</a>
 </body>

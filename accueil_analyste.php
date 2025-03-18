@@ -140,33 +140,9 @@
 
 <div class="nav">
     <a href="accueil.php">Accueil</a>
-    
-    <div class="dropdown">
-        <button class="dropbtn">Match</button>
-        <div class="dropdown-content">
-            <a href="creer_match.php">Créer un match</a>
-            <a href="rejoindre_match.php">Rejoindre un match</a>
-        </div>
-    </div>
-    
-    <a href="statistiques.php">Voir mes statistiques</a>
-	<div class="dropdown">
-        <button class="dropbtn">Tournoi</button>
-        <div class="dropdown-content">
-               <a href="creer_tournoi.php">Créer un tournoi</a>
-			   <a href="afficher_tournois.php">Afficher tournoi</a>
-			   <a href="gerer_tournois.php">Gerer tournoi</a>
-        </div>
-    </div>
+   
+    <a href="afficher_statitistiques.php">Les statistiques</a>
 	
-	<div class="dropdown">
-        <button class="dropbtn">Equipe</button>
-        <div class="dropdown-content">
-               <a href="creer_equipe.php">Créer une equipe</a>
-			   <a href="rejoindre_equipe.php">Rejoindre une equipe</a>
-        </div>
-    </div>
-    <a href="changer_utilisateur.php">Changer role</a>
     <a href="index.html">Se déconnecter</a>
 </div>
 <div class="video-container">

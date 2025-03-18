@@ -18,7 +18,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Redirection selon le rôle
         if ($row['role'] === 'admin') {
             header("Location: accueil_admin.php");
-        } else {
+        } 
+        else if($row['role']==='analyste'){
+            header("Location: accueil_analyste.php");
+        }
+        else {
             header("Location: accueil.php");
         }
         exit();
