@@ -1,106 +1,132 @@
 <?php
-// export_pdf.php
-
-// 1. Inclure la configuration et la bibliothèque FPDF
+session_start();
 include('config.php');
-require('fpdf/fpdf.php'); // Chemin vers fpdf.php (ex: "fpdf/fpdf.php" si fpdf est au même niveau que ce fichier)
+require('fpdf/fpdf.php'); // Vérifiez que le chemin vers fpdf.php est correct
 
-// 2. Vérifier si l'ID du tournoi est bien passé en paramètre
-if (!isset($_GET['tournoi'])) {
-    die("Tournoi non spécifié.");
+// Vérifier que les données nécessaires sont transmises via POST
+if (!isset($_POST['totalMatchs'])) {
+    die("Données non spécifiées pour l'export PDF.");
 }
-$idTournois = intval($_GET['tournoi']);
 
-// 3. Récupérer le nom du tournoi
-$tournoiQuery = "SELECT nomTournois FROM Tournois WHERE idTournois = ?";
-$stmtTournoi = $conn->prepare($tournoiQuery);
-$stmtTournoi->bind_param("i", $idTournois);
-$stmtTournoi->execute();
-$resultTournoi = $stmtTournoi->get_result();
-$tournoi = $resultTournoi->fetch_assoc();
-$nomTournoi = $tournoi['nomTournois'];
+// --- Recalculer les statistiques globales ---
+// 1) Nombre total de matchs
+$queryTotalMatchs = "SELECT COUNT(*) AS total_matchs FROM Matchs";
+$result = mysqli_query($conn, $queryTotalMatchs);
+$row = mysqli_fetch_assoc($result);
+$totalMatchs = $row['total_matchs'];
 
-// 4. Créer un nouveau document PDF
+// 2) Moyenne de buts par match
+$queryMoyenneButs = "
+    SELECT AVG(scoreEquipe1 + scoreEquipe2) AS avg_goals
+    FROM Matchs
+    WHERE scoreEquipe1 IS NOT NULL AND scoreEquipe2 IS NOT NULL
+";
+$result = mysqli_query($conn, $queryMoyenneButs);
+$row = mysqli_fetch_assoc($result);
+$moyenneButs = round($row['avg_goals'], 2);
+
+// 3) Match le plus scoré avec noms des équipes
+$queryMaxScore = "
+    SELECT e1.nomEquipe AS equipe1, e2.nomEquipe AS equipe2, 
+           (m.scoreEquipe1 + m.scoreEquipe2) AS total_buts
+    FROM Matchs m
+    LEFT JOIN Equipe e1 ON m.idEquipe1 = e1.idEquipe
+    LEFT JOIN Equipe e2 ON m.idEquipe2 = e2.idEquipe
+    ORDER BY total_buts DESC
+    LIMIT 1
+";
+$result = mysqli_query($conn, $queryMaxScore);
+$row = mysqli_fetch_assoc($result);
+$matchPlusScore = $row['equipe1'] . " VS " . $row['equipe2'];
+$maxButs = $row['total_buts'];
+
+// 4) Nombre total de tournois
+$queryTotalTournois = "SELECT COUNT(*) AS total_tournois FROM Tournois";
+$result = mysqli_query($conn, $queryTotalTournois);
+$row = mysqli_fetch_assoc($result);
+$totalTournois = $row['total_tournois'];
+
+// --- Nouvelle section : Participation par équipe sur tous les tournois ---
+$teamsParticipation = []; 
+
+// Récupérer la liste de toutes les équipes
+$queryTeams = "SELECT idEquipe, nomEquipe FROM Equipe";
+$resTeams = mysqli_query($conn, $queryTeams);
+
+while ($team = mysqli_fetch_assoc($resTeams)) {
+    $idEquipe = $team['idEquipe'];
+    $nomEquipe = $team['nomEquipe'];
+    
+    // Pour chaque équipe, compter le nombre de tournois distincts auxquels elle participe
+    $queryTeamParticipation = "
+    SELECT COUNT(DISTINCT i.idTournois) AS nbParticipations
+    FROM impliquer i
+    JOIN Tournois t ON i.idTournois = t.idTournois
+    WHERE i.idEquipe = $idEquipe
+";
+$resTeam = mysqli_query($conn, $queryTeamParticipation);
+
+    $rowTeam = mysqli_fetch_assoc($resTeam);
+    $nbParticipations = $rowTeam['nbParticipations'];
+    
+    // Calcul du taux de participation par équipe par rapport au nombre total de tournois
+    $rate = $totalTournois > 0 ? ($nbParticipations / $totalTournois) * 100 : 0;
+    
+    $teamsParticipation[] = [
+        'idEquipe' => $idEquipe,
+        'nomEquipe' => $nomEquipe,
+        'nbParticipations' => $nbParticipations,
+        'rate' => $rate
+    ];
+}
+
+// --- Génération du PDF ---
 $pdf = new FPDF();
 $pdf->AddPage();
 $pdf->SetFont('Arial','B',16);
-$pdf->Cell(0,10, 'Tournoi : '.$nomTournoi, 0, 1, 'C');
+$pdf->Cell(0,10, 'Statistiques Globales', 0, 1, 'C');
 $pdf->Ln(5);
 
-// 5. Afficher la liste des matchs
+// Statistiques sur les matchs
 $pdf->SetFont('Arial','B',12);
-$pdf->Cell(0,10, 'Matches :', 0, 1);
+$pdf->Cell(0,10, 'Statistiques sur les matchs :', 0, 1);
 $pdf->SetFont('Arial','',10);
-
-$queryMatchs = "
-    SELECT m.idMatch, m.phase, e1.nomEquipe AS equipe1, e2.nomEquipe AS equipe2, 
-           m.scoreEquipe1, m.scoreEquipe2, g.nomEquipe AS winner 
-    FROM Matchs m
-    LEFT JOIN Equipe e1 ON m.idEquipe1 = e1.idEquipe 
-    LEFT JOIN Equipe e2 ON m.idEquipe2 = e2.idEquipe
-    LEFT JOIN Equipe g ON m.winner = g.idEquipe
-    WHERE m.idTournois = ? 
-    ORDER BY FIELD(m.phase, 'Quart de finale', 'Demi-finale', 'Finale'), m.idMatch
-";
-$stmtMatchs = $conn->prepare($queryMatchs);
-$stmtMatchs->bind_param("i", $idTournois);
-$stmtMatchs->execute();
-$resultMatchs = $stmtMatchs->get_result();
-
-$currentPhase = null;
-while ($match = $resultMatchs->fetch_assoc()) {
-    if ($match['phase'] !== $currentPhase) {
-        $currentPhase = $match['phase'];
-        // Titre de la phase
-        $pdf->SetFont('Arial','B',12);
-        $pdf->Cell(0,10, 'Phase : '.$currentPhase, 0, 1);
-        $pdf->SetFont('Arial','',10);
-    }
-    // Affichage du match
-    $ligneMatch = $match['equipe1'].' vs '.$match['equipe2'].' - Score: '.$match['scoreEquipe1'].' - '.$match['scoreEquipe2'].' - Gagnant: '.$match['winner'];
-    $pdf->Cell(0,10, $ligneMatch, 0, 1);
-}
+$pdf->Cell(0,10, 'Nombre total de matchs joues : ' . $totalMatchs, 0, 1);
+$pdf->Cell(0,10, 'Moyenne de buts par match : ' . $moyenneButs, 0, 1);
+$pdf->Cell(0,10, 'Match le plus score : ' . $matchPlusScore . ' avec ' . $maxButs . ' buts cumules', 0, 1);
 $pdf->Ln(5);
 
-// 6. Afficher les statistiques des équipes
+// Statistiques sur les tournois
 $pdf->SetFont('Arial','B',12);
-$pdf->Cell(0,10, 'Statistiques des Équipes :', 0, 1);
+$pdf->Cell(0,10, 'Statistiques sur les tournois :', 0, 1);
+$pdf->SetFont('Arial','',10);
+$pdf->Cell(0,10, 'Nombre total de tournois organises : ' . $totalTournois, 0, 1);
+$pdf->Ln(5);
 
-// En-têtes du tableau
+// Participation par équipe
+$pdf->SetFont('Arial','B',12);
+$pdf->Cell(0,10, 'Participation par equipe', 0, 1);
 $pdf->SetFont('Arial','B',10);
-$pdf->Cell(40,10, 'Équipe', 1);
-$pdf->Cell(30,10, 'Victoires', 1);
-$pdf->Cell(30,10, 'Défaites', 1);
-$pdf->Cell(30,10, 'Buts Marqués', 1);
-$pdf->Cell(30,10, 'Buts Encaissés', 1);
-$pdf->Ln();
+// En-têtes du tableau
+$pdf->Cell(25, 8, 'ID Equipe', 1, 0, 'C');
+$pdf->Cell(50, 8, 'Nom Equipe', 1, 0, 'C');
+$pdf->Cell(40, 8, 'Tournois part.', 1, 0, 'C');
+$pdf->Cell(40, 8, 'Taux (%)', 1, 1, 'C');
 
 $pdf->SetFont('Arial','',10);
-
-$queryStats = "
-    SELECT e.nomEquipe,
-           SUM(CASE WHEN m.winner = e.idEquipe THEN 1 ELSE 0 END) AS victoires,
-           SUM(CASE WHEN m.winner != e.idEquipe AND (m.idEquipe1 = e.idEquipe OR m.idEquipe2 = e.idEquipe) THEN 1 ELSE 0 END) AS defaites,
-           SUM(CASE WHEN m.idEquipe1 = e.idEquipe THEN m.scoreEquipe1 ELSE m.scoreEquipe2 END) AS buts_marques,
-           SUM(CASE WHEN m.idEquipe1 = e.idEquipe THEN m.scoreEquipe2 ELSE m.scoreEquipe1 END) AS buts_encaisses
-    FROM Equipe e
-    LEFT JOIN Matchs m ON e.idEquipe = m.idEquipe1 OR e.idEquipe = m.idEquipe2
-    WHERE m.idTournois = ?
-    GROUP BY e.idEquipe
-";
-$stmtStats = $conn->prepare($queryStats);
-$stmtStats->bind_param("i", $idTournois);
-$stmtStats->execute();
-$resultStats = $stmtStats->get_result();
-
-while ($row = $resultStats->fetch_assoc()) {
-    $pdf->Cell(40,10, $row['nomEquipe'], 1);
-    $pdf->Cell(30,10, $row['victoires'], 1);
-    $pdf->Cell(30,10, $row['defaites'], 1);
-    $pdf->Cell(30,10, $row['buts_marques'], 1);
-    $pdf->Cell(30,10, $row['buts_encaisses'], 1);
-    $pdf->Ln();
+foreach ($teamsParticipation as $team) {
+    $pdf->Cell(25, 8, $team['idEquipe'], 1, 0, 'C');
+    $pdf->Cell(50, 8, $team['nomEquipe'], 1, 0, 'C');
+    $pdf->Cell(40, 8, $team['nbParticipations'], 1, 0, 'C');
+    $pdf->Cell(40, 8, round($team['rate'],2).' %', 1, 1, 'C');
 }
 
-// 7. Générer et forcer le téléchargement du PDF
-$pdf->Output('D', 'Tournoi_'.$nomTournoi.'.pdf');
+// Nettoyer le buffer de sortie pour éviter l'erreur "Some data has already been output"
+if (ob_get_length()) {
+    ob_end_clean();
+}
+
+// Sortie du PDF et forcer le téléchargement
+$pdf->Output('D', 'Statistiques_Globales.pdf');
+exit;
+?>

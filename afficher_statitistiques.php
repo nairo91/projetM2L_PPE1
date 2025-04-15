@@ -11,14 +11,15 @@ if (!isset($_SESSION['pseudo']) || $_SESSION['role'] !== 'analyste') {
 // On récupère l'ID du tournoi (par exemple via GET)
 $idTournois = isset($_GET['tournoi']) ? intval($_GET['tournoi']) : 0;
 
-// --- Requêtes SQL pour les statistiques ---
+// --- Requêtes SQL pour les statistiques globales ---
 
+// 1) Nombre total de matchs
 $queryTotalMatchs = "SELECT COUNT(*) AS total_matchs FROM Matchs";
 $resultTotal = mysqli_query($conn, $queryTotalMatchs);
 $rowTotal = mysqli_fetch_assoc($resultTotal);
 $totalMatchs = $rowTotal['total_matchs'];
 
-
+// 2) Moyenne de buts par match
 $queryMoyenneButs = "
     SELECT AVG(scoreEquipe1 + scoreEquipe2) AS avg_goals
     FROM Matchs
@@ -44,19 +45,16 @@ $rowMax = mysqli_fetch_assoc($resultMax);
 $matchPlusScore = $rowMax['equipe1'] . " VS " . $rowMax['equipe2'];
 $maxButs = $rowMax['total_buts'];
 
-
+// 4) Nombre total de tournois
 $queryTotalTournois = "SELECT COUNT(*) AS total_tournois FROM Tournois";
 $resultTournois = mysqli_query($conn, $queryTotalTournois);
 $rowTournois = mysqli_fetch_assoc($resultTournois);
 $totalTournois = $rowTournois['total_tournois'];
 
-
-// 5) Taux de participation des équipes pour le tournoi actuel
-
-// Définir le nombre d'équipes attendu pour chaque tournoi (par exemple, 8)
+// 5) (Ancien calcul global du taux de participation pour un tournoi spécifique)
+//    Ici, on calcule ce taux par rapport à un nombre attendu (ex: 8 équipes)
+//    On garde ce code si besoin, mais nous allons ajouter le tableau par équipe.
 $expectedEquipes = 8;
-
-// Récupérer le nombre d'équipes participantes pour le tournoi actuel
 $queryParticipations = "
     SELECT COUNT(DISTINCT idEquipe) AS nbEquipesParticipant
     FROM impliquer
@@ -68,13 +66,45 @@ $stmtPart->execute();
 $resultPart = $stmtPart->get_result();
 $rowPart = $resultPart->fetch_assoc();
 $nbEquipesParticipant = $rowPart['nbEquipesParticipant'];
-
-// Calcul du taux de participation en pourcentage
-$tauxParticipation = 0;
+$tauxParticipationGlobal = 0;
 if ($expectedEquipes > 0) {
-    $tauxParticipation = ($nbEquipesParticipant / $expectedEquipes) * 100;
+    $tauxParticipationGlobal = ($nbEquipesParticipant / $expectedEquipes) * 100;
 }
 
+// --- Nouvelle Section : Participation par équipe sur tous les tournois ---
+
+// On récupère la liste de toutes les équipes
+$queryTeams = "SELECT idEquipe, nomEquipe FROM Equipe";
+$resultTeams = mysqli_query($conn, $queryTeams);
+$teamsParticipation = [];
+
+while ($team = mysqli_fetch_assoc($resultTeams)) {
+    $idEquipe = $team['idEquipe'];
+    $nomEquipe = $team['nomEquipe'];
+    
+    // Pour chaque équipe, compter le nombre de tournois distincts auxquels elle participe
+    $queryTeamParticipation = "SELECT COUNT(DISTINCT i.idTournois) AS nbParticipations
+FROM impliquer i
+JOIN Tournois t ON i.idTournois = t.idTournois
+WHERE i.idEquipe = ?
+";
+    $stmtTeam = $conn->prepare($queryTeamParticipation);
+    $stmtTeam->bind_param("i", $idEquipe);
+    $stmtTeam->execute();
+    $resultTeam = $stmtTeam->get_result();
+    $rowTeam = $resultTeam->fetch_assoc();
+    $nbParticipations = $rowTeam['nbParticipations'];
+    
+    // Calcul du taux de participation par équipe (par rapport au nombre total de tournois)
+    $rate = $totalTournois > 0 ? ($nbParticipations / $totalTournois) * 100 : 0;
+    
+    $teamsParticipation[] = [
+        'idEquipe' => $idEquipe,
+        'nomEquipe' => $nomEquipe,
+        'nbParticipations' => $nbParticipations,
+        'rate' => $rate
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -135,6 +165,21 @@ if ($expectedEquipes > 0) {
         .stats-section {
             margin-bottom: 40px;
         }
+        /* Styles pour le tableau de participation par équipe */
+        .teams-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .teams-table th, .teams-table td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        .teams-table th {
+            background-color: #0077cc;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -153,19 +198,38 @@ if ($expectedEquipes > 0) {
         <div class="stats-section">
             <h2>Statistiques sur les tournois</h2>
             <p>Nombre total de tournois organisés : <strong><?php echo $totalTournois; ?></strong></p>
-            <p>Taux de participation des équipes : 
-               <strong><?php echo round($tauxParticipation, 2); ?>%</strong>
-            </p>
         </div>
 
-       
+        <div class="stats-section">
+            <h2>Participation par équipe</h2>
+            <table class="teams-table">
+                <tr>
+                    <th>ID Équipe</th>
+                    <th>Nom de l'équipe</th>
+                    <th>Tournois participés</th>
+                    <th>Total de tournois</th>
+                    <th>Taux de participation (%)</th>
+                </tr>
+                <?php foreach ($teamsParticipation as $team): ?>
+                    <tr>
+                        <td><?php echo $team['idEquipe']; ?></td>
+                        <td><?php echo htmlspecialchars($team['nomEquipe']); ?></td>
+                        <td><?php echo $team['nbParticipations']; ?></td>
+                        <td><?php echo $totalTournois; ?></td>
+                        <td><?php echo round($team['rate'], 2); ?>%</td>
+                    </tr>
+                <?php endforeach; ?>
+            </table>
+        </div>
+
         <form method="POST" action="export_pdf.php">
             <input type="hidden" name="totalMatchs" value="<?php echo $totalMatchs; ?>">
             <input type="hidden" name="moyenneButs" value="<?php echo $moyenneButs; ?>">
             <input type="hidden" name="matchPlusScore" value="<?php echo $matchPlusScore; ?>">
             <input type="hidden" name="maxButs" value="<?php echo $maxButs; ?>">
             <input type="hidden" name="totalTournois" value="<?php echo $totalTournois; ?>">
-            <input type="hidden" name="tauxParticipation" value="<?php echo round($tauxParticipation, 2); ?>">
+            <input type="hidden" name="tauxParticipation" value="<?php echo round($tauxParticipationGlobal, 2); ?>">
+  
             <button type="submit">Exporter en PDF</button>
         </form>
     </div>
